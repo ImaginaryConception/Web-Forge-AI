@@ -78,15 +78,17 @@ class AIService
             throw new \RuntimeException("Le fichier {$fileName} n'existe pas");
         }
 
-        $promptText = "Tu es un générateur de code HTML.TWIG/CSS/JS. Commence par expliquer en une ou deux phrases ce que tu vas faire (par exemple: 'Je vais créer un site de e-commerce moderne avec X, Y, Z fonctionnalités...').\n\n";
+        $promptText = "Tu es un générateur de code HTML.TWIG/CSS/JS. Commence par expliquer en une ou deux phrases ce que tu vas faire (par exemple: 'Je vais créer un site de e-commerce moderne avec X, Y, Z fonctionnalités...').
+
+";
         $promptText .= "APRÈS ton explication, tu dois retourner un objet JSON contenant le code du site. Le JSON doit être clairement séparé de ton explication et commencer par une ligne contenant uniquement '{'. Le JSON peut contenir les clés suivantes :\n";
         $promptText .= "- index.html.twig : Doit commencer par {% extends 'base.html.twig' %} et définir son contenu dans {% block body %}\n";
-        $promptText .= "- app.css : Le CSS doit être écrit de manière brute sans utiliser Asset, il doit être ultra moderne et complet\n";
         $promptText .= "- app.js : Le code JavaScript doit être ultra complet pour la page web\n";
         $promptText .= "- Autres fichiers .html.twig : Tu peux créer d'autres fichiers .html.twig si besoin. Ils doivent tous:\n";
         $promptText .= "  * Commencer par {% extends 'base.html.twig' %}\n";
         $promptText .= "  * Définir leur contenu dans {% block body %}\n";
-        $promptText .= "  * Hériter automatiquement de app.js et app.css\n";
+        $promptText .= "  * IMPORTANT: Inclure leur propre CSS directement dans le fichier Twig en utilisant la balise <style> dans le block stylesheets : {% block stylesheets %}\n<style>\n/* CSS spécifique à cette page */\n</style>\n{% endblock %}\n";
+        $promptText .= "  * Hériter automatiquement de app.js\n";
         $promptText .= "Ajoute beaucoup de pages Twig pour les besoins\n";
         $promptText .= "Ajoute beaucoup d'animations pour les boutons, textes etc\n";
         $promptText .= "Le design du site doit être moderne avec un affichage optimisé.\n";
@@ -97,7 +99,7 @@ class AIService
         $promptText.= "Je veux que tu mettes des vrais images, pas de #\n";
         $promptText.= "Il faut que ce soit ULTRA MODERNE VISUELLEMENT avec du contenu ULTRA COMPLET, une mise en page ULTRA PROFESSIONNELLE !\n";
         $promptText.= "Il faut que ce soit ultra animé, avec un effet de glissement quand on va dans une encre.\n";
-        $promptText .= "IMPORTANT : NE JAMAIS générer le fichier base.html.twig\n\n";
+        $promptText .= "IMPORTANT : NE JAMAIS générer le fichier base.html.twig et NE PAS générer de fichier app.css séparé, tout le CSS doit être intégré directement dans chaque fichier Twig\n\n";
         
         // Ajouter les préférences de l'utilisateur au prompt si disponibles
         if ($user) {
@@ -415,12 +417,14 @@ class AIService
             if ($filename === 'app.css' || $filename === 'app.js' || str_ends_with($filename, '.html.twig')) {
                 $result[$filename] = $content;
             }
+            // Ne plus traiter app.css car le CSS est maintenant intégré dans chaque fichier Twig
         }
 
         // S'assurer que les fichiers requis existent
         if (!isset($result['index.html.twig'])) $result['index.html.twig'] = '';
-        if (!isset($result['app.css'])) $result['app.css'] = '';
         if (!isset($result['app.js'])) $result['app.js'] = '';
+        // Ne plus générer app.css car le CSS est maintenant intégré dans chaque fichier Twig
+        if (!isset($result['app.css'])) $result['app.css'] = '';
 
         // Mettre à jour le message de génération pour indiquer la génération des fichiers backend
         if ($promptEntity) {
@@ -454,17 +458,18 @@ class AIService
 
         // Ajouter ou mettre à jour les fichiers frontend
         foreach ($decoded as $filename => $content) {
-            if ($filename === 'app.css' || $filename === 'app.js' || str_ends_with($filename, '.html.twig')) {
+            if ($filename === 'app.js' || str_ends_with($filename, '.html.twig')) {
                 $result[$filename] = $content;
                 // Stocker les données frontend dans la propriété de classe
                 $this->frontendData[$filename] = $content;
             }
+            // Ne plus traiter app.css car le CSS est maintenant intégré dans chaque fichier Twig
         }
 
         // S'assurer que les fichiers requis existent
         if (!isset($result['index.html.twig'])) $result['index.html.twig'] = '';
-        if (!isset($result['app.css'])) $result['app.css'] = '';
         if (!isset($result['app.js'])) $result['app.js'] = '';
+        // Ne plus générer app.css car le CSS est maintenant intégré dans chaque fichier Twig
         
         // Stocker le message de génération
         $result['__generation_message__'] = $generationMessage;
